@@ -11,31 +11,23 @@ import UIKit
 class ToDoListViewController: UITableViewController {
     
     var itemArray = [Item]()
-    let defaults = UserDefaults.standard
+
     // new variable (itemArray) assigned to an array of Item objects from the Item.swift class
     // inherits the title property (set to an empty string) and the done property (set to false)
+    
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let newItem = Item()
-        newItem.title  = "Find Mike"
-        itemArray.append(newItem)
-
-        let newItem2 = Item()
-        newItem2.title  = "Wax"
-        itemArray.append(newItem2)
-
-        let newItem3 = Item()
-        newItem3.title  = "Save world"
-        itemArray.append(newItem3)
-        // hard-coded the title property of three new item objects
-        // appended each item object to itemArray
-     
         
-        if let items = defaults.array(forKey: "ToDoListArray") as? [Item] {
-            itemArray = items
-        }
+        print(dataFilePath)
+        
+        
+        loadItems()
+     
+       
+  
         // Do any additional setup after loading the view.
     }
 
@@ -81,11 +73,12 @@ class ToDoListViewController: UITableViewController {
        // print(itemArray[indexPath.row])
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+         self.saveItems()
         // for the item at indexPath/row selected, make the .done property the opposite of what it currently is
-        
-        tableView.reloadData()
+        // save the toggled check mark
         
         tableView.deselectRow(at: indexPath, animated: true)
+        
     
     }
     
@@ -105,8 +98,8 @@ class ToDoListViewController: UITableViewController {
             // property title set to the textfield entered by the user
             
             self.itemArray.append(newItem)
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-            self.tableView.reloadData()
+            self.saveItems()
+//            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
             // append the new item to the initial itme array
             // save the new item as a user default for when the user returns, set the key as "ToDoListArray"
             // reload the Tableview to capture new information
@@ -121,9 +114,30 @@ class ToDoListViewController: UITableViewController {
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
         
-        
-        
     }
     
+    func saveItems() {
+       
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("Error encoding item array, \(error)")
+        }
+        self.tableView.reloadData()
+    }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error decoding data: \(error)")
+            }
+        }
+    }
 }
 
